@@ -38,6 +38,7 @@ fn prose_cli_delegates_to_cqlt_and_distinguishes_quality_from_execution_failure(
         String::from_utf8_lossy(&good.stderr)
     );
     assert_eq!(good.stdout, run().stdout);
+    assert!(String::from_utf8_lossy(&good.stderr).contains("\"event\":\"command\""));
     let report: Value = serde_json::from_slice(&good.stdout).unwrap();
     assert_eq!(report["ruleset"], cqlt::prose::RULESET);
     fs::write(&input, "\n").unwrap();

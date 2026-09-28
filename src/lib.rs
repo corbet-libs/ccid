@@ -123,6 +123,7 @@ pub struct Runner {
     pub environment: Environment,
     deadline: Instant,
     nix_inventory: Option<(String, Vec<String>)>,
+    events_to_stderr: bool,
 }
 #[cfg(unix)]
 struct OwnedChild(Box<dyn ChildWrapper>);
@@ -150,7 +151,21 @@ impl Runner {
             environment,
             deadline,
             nix_inventory: None,
+            events_to_stderr: false,
         })
+    }
+    /// Keep machine-readable stdout separate from process timing diagnostics.
+    pub fn with_stderr_events(mut self) -> Self {
+        self.events_to_stderr = true;
+        self
+    }
+
+    fn command_event(&self, value: serde_json::Value) {
+        if self.events_to_stderr {
+            eprintln!("{value}");
+        } else {
+            event(value);
+        }
     }
     pub fn run(&self, argv: &[String], capture: bool) -> Result<String> {
         validate_command(argv)?;
@@ -240,7 +255,7 @@ impl Runner {
         };
         // Do not let detached descendants retain the shared project cache or pipes.
         let _ = child.0.start_kill();
-        event(
+        self.command_event(
             json!({"event":"command", "executable":Path::new(&argv[0]).file_name().map(|s|s.to_string_lossy()), "seconds":started.elapsed().as_secs_f64(), "exit_code":status.code()}),
         );
         if !status.success() {

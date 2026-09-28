@@ -94,7 +94,8 @@ pub fn run(options: Options) -> Result<u8> {
         workspace.path().into(),
         environment,
         Duration::from_secs(options.timeout),
-    )?;
+    )?
+    .with_stderr_events();
     let report = plan
         .run(|argv| runner.run(argv, true).map_err(|e| e.to_string()))
         .map_err(failure)?;
