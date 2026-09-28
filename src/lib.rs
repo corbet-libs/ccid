@@ -69,7 +69,7 @@ fn cpu_budget() -> u64 {
             }
         }
     }
-    available.min(4).max(1)
+    available.clamp(1, 4)
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]

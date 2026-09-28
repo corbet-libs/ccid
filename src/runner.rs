@@ -6,6 +6,7 @@ use serde_json::json;
 #[cfg(unix)]
 use std::{
     io::Read,
+    path::Path,
     process::{Command, Stdio},
     sync::mpsc,
     thread,
