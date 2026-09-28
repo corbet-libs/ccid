@@ -63,8 +63,8 @@ fn cpu_budget() -> u64 {
         }
         if let [q, p] = fields.as_slice() {
             if let (Ok(q), Ok(p)) = (q.parse::<u64>(), p.parse::<u64>()) {
-                if p > 0 {
-                    return available.min((q / p).max(1));
+                if let Some(jobs) = q.checked_div(p) {
+                    return available.min(jobs.max(1));
                 }
             }
         }
@@ -162,7 +162,7 @@ pub struct Check {
     commands: Vec<Vec<String>>,
 }
 pub fn run_checks(repo: &Path, manifest: &Path, selectors: &[String], plan: bool) -> Result<()> {
-    run_checks_inner(repo, manifest, selectors, plan, None, None, None, false)
+    run_checks_inner(repo, manifest, selectors, plan, CheckContext::default())
 }
 
 pub(crate) fn run_checks_with_environment(
@@ -179,10 +179,12 @@ pub(crate) fn run_checks_with_environment(
         manifest,
         selectors,
         plan,
-        Some(verified_commit),
-        Some(environment),
-        Some(deadline),
-        false,
+        CheckContext {
+            verified_commit: Some(verified_commit),
+            base_environment: Some(environment),
+            enclosing_deadline: Some(deadline),
+            stable_archive: false,
+        },
     )
 }
 
@@ -204,11 +206,20 @@ pub fn run_archive_checks(
         manifest,
         selectors,
         plan,
-        Some(commit),
-        None,
-        None,
-        true,
+        CheckContext {
+            verified_commit: Some(commit),
+            stable_archive: true,
+            ..CheckContext::default()
+        },
     )
+}
+
+#[derive(Default)]
+struct CheckContext<'a> {
+    verified_commit: Option<&'a str>,
+    base_environment: Option<Environment>,
+    enclosing_deadline: Option<Instant>,
+    stable_archive: bool,
 }
 
 fn run_checks_inner(
@@ -216,11 +227,14 @@ fn run_checks_inner(
     manifest: &Path,
     selectors: &[String],
     plan: bool,
-    verified_commit: Option<&str>,
-    base_environment: Option<Environment>,
-    enclosing_deadline: Option<Instant>,
-    stable_archive: bool,
+    context: CheckContext<'_>,
 ) -> Result<()> {
+    let CheckContext {
+        verified_commit,
+        base_environment,
+        enclosing_deadline,
+        stable_archive,
+    } = context;
     let archive = verified_commit.is_some();
     let root = repo.canonicalize()?;
     let manifest_path = root.join(manifest);
