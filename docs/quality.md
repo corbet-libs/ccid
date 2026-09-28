@@ -89,6 +89,42 @@ health. Scheduling and audit storage belong to the caller, not this command.
 
 ## Reuse boundary
 
+### Writing quality
+
+`ccid quality prose` delegates to cqlt's subordinate Vale backend. Install Vale
+through your normal tool provisioning first; the command never installs it.
+Vale 3.23.0 is tested. cqlt supplies its own isolated English writing rules and
+does not load the repository's or user's Vale configuration.
+
+```sh
+ccid quality prose --snapshot github.json --json
+ccid quality prose --snapshot forgejo.json --json
+ccid quality prose --file README.md --file docs/guide.md
+ccid quality prose --input texts.json --fail-on error --timeout 120
+```
+
+`texts.json` is an array of `{ "subject": "example#description", "format":
+"text", "text": "Tools for checking repository descriptions." }` objects.
+Use `markdown` for Markdown. Inputs can be combined; subjects must be unique.
+Files must be explicit UTF-8 `.md`, `.markdown` or `.txt` files. No implicit
+directory traversal or remote README download takes place. Saved forge evidence
+contains descriptions but only README paths/sizes; supply README bodies as files
+or explicit text inputs. Incomplete forge evidence is rejected.
+
+cqlt checks repeated words, selected vague claims, wordiness and empty text.
+The default failure threshold is warning; `--fail-on error` keeps stylistic
+warnings advisory while empty text fails. Exit 2 means execution/input failure,
+including missing Vale, timeout or malformed backend output. Input is limited to
+4,096 texts and 16 MiB; captured output is limited to 16 MiB. The default total
+subprocess timeout is 120 seconds. The private temporary workspace is removed
+after execution. Reports can contain private text excerpts: retain them privately.
+
+See [cqlt's prose contract](https://github.com/corbet-foss/cqlt/blob/main/docs/prose.md)
+for deterministic replay, rule meanings and their limits. Prose findings assess
+style; factual consistency and audience fit require separate editorial review.
+
+### Other checks
+
 Use existing tools for deeper checks: [alint](https://github.com/asamarts/alint)
 for repository-file policy, [OpenSSF Scorecard](https://github.com/ossf/scorecard)
 for its supported security checks, and the repository's native linters and tests.

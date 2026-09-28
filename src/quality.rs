@@ -1,4 +1,5 @@
-//! Forge adapters and CLI for the pure cqlt policy library.
+//! Forge adapters and CLI for the cqlt quality library.
+mod prose;
 use ccid::{Environment, Result, Runner};
 use clap::{Subcommand, ValueEnum};
 use cqlt::{Document, Organization, Policy, Repository, Severity, Snapshot, Status, Visibility};
@@ -28,6 +29,8 @@ pub enum Threshold {
 
 #[derive(Subcommand)]
 pub enum Action {
+    /// Check writing with cqlt's subordinate Vale backend. Requires installed Vale.
+    Prose(prose::Options),
     /// Collect visible organizations and repositories using read-only forge APIs.
     Collect {
         #[arg(long, value_enum)]
@@ -58,6 +61,7 @@ pub enum Action {
 
 pub fn run(action: Action) -> Result<u8> {
     match action {
+        Action::Prose(options) => prose::run(options),
         Action::Check {
             snapshot,
             policy,

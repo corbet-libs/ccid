@@ -11,6 +11,8 @@ provides explicit, separately invoked uploads of already-verified archives.
 [`ccid quality`](docs/quality.md) audits organization and repository presentation
 on GitHub and Forgejo through the separate, deterministic cqlt policy library.
 It collects read-only evidence and produces reproducible offline quality gates.
+`ccid quality prose` checks descriptions and documentation through cqlt's
+subordinate Vale backend, with a versioned writing policy and stable reports.
 
 The Rust command library forbids unsafe code in this crate and requires Rust
 1.89+ to build. Git and the selected check's existing tools are required at runtime.
