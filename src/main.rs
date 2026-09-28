@@ -6,6 +6,7 @@ use std::{path::PathBuf, process::ExitCode, sync::atomic::Ordering};
 #[cfg(unix)]
 mod supervision;
 
+mod forge_cli;
 mod quality;
 
 #[derive(Parser)]
@@ -17,6 +18,11 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Action {
+    /// Repository placement, exact cloning and execution failover policy.
+    Forge {
+        #[command(subcommand)]
+        action: forge_cli::Action,
+    },
     /// Deterministic organization and repository quality checks across forges.
     Quality {
         #[command(subcommand)]
@@ -71,6 +77,15 @@ enum Action {
 fn main() -> ExitCode {
     let cli = Cli::parse();
     let outcome = match cli.action {
+        Action::Forge { action } => {
+            if let Err(error) =
+                ctrlc::set_handler(|| ccid::INTERRUPTED.store(true, Ordering::SeqCst))
+            {
+                eprintln!("ccid: cannot install cancellation handler: {error}");
+                return ExitCode::from(2);
+            }
+            forge_cli::run(action)
+        }
         Action::Quality { action } => {
             if let Err(error) =
                 ctrlc::set_handler(|| ccid::INTERRUPTED.store(true, Ordering::SeqCst))

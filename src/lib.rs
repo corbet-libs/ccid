@@ -28,6 +28,7 @@ pub type Environment = BTreeMap<OsString, OsString>;
 mod admission;
 mod cache;
 mod dependency;
+pub mod forge;
 
 pub use dependency::resolve_cargo;
 
@@ -740,7 +741,7 @@ fn validate_check(check: &Check) -> Result<()> {
 }
 
 pub fn run_checks(repo: &Path, manifest: &Path, selectors: &[String], plan: bool) -> Result<()> {
-    run_checks_inner(repo, manifest, selectors, plan, None, None, None)
+    run_checks_inner(repo, manifest, selectors, plan, None, None, None, false)
 }
 
 pub(crate) fn run_checks_with_environment(
@@ -760,6 +761,7 @@ pub(crate) fn run_checks_with_environment(
         Some(verified_commit),
         Some(environment),
         Some(deadline),
+        false,
     )
 }
 
@@ -784,6 +786,7 @@ pub fn run_archive_checks(
         Some(commit),
         None,
         None,
+        true,
     )
 }
 
@@ -795,6 +798,7 @@ fn run_checks_inner(
     verified_commit: Option<&str>,
     base_environment: Option<Environment>,
     enclosing_deadline: Option<Instant>,
+    stable_archive: bool,
 ) -> Result<()> {
     let archive = verified_commit.is_some();
     let root = repo.canonicalize()?;
@@ -893,6 +897,17 @@ fn run_checks_inner(
         "CCID_TARGET_LOCK_HELD",
         target.as_os_str(),
     );
+    // The verified archive has no mutable checkout or untracked inputs. Give it
+    // a stable canonical path only while holding the actual Cargo target lock.
+    // Resolver candidates retain their original path for post-check auditing.
+    let stable_source = if stable_archive {
+        Some(cache::StableSource::prepare(&root, &target)?)
+    } else {
+        None
+    };
+    let root = stable_source
+        .as_ref()
+        .map_or(root, |source| source.path().to_owned());
     let _scratch = cache::scratch(&mut environment)?;
     let freshness = if archive {
         Some(cache::Freshness::prepare(&root, &target, &identity)?)
