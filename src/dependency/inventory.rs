@@ -166,7 +166,10 @@ fn entries(root: &Path) -> Result<BTreeMap<PathBuf, String>> {
                 format!("symlink:{}", fs::read_link(&full)?.display()),
             );
         } else {
-            out.insert(path.to_path_buf(), format!("file:{}", digest(&fs::read(&full)?)));
+            out.insert(
+                path.to_path_buf(),
+                format!("file:{}", digest(&fs::read(&full)?)),
+            );
         }
         Ok(())
     }
