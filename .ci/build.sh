@@ -50,6 +50,7 @@ ci_target=$(rustc -vV | sed -n 's/^host: //p')
 rustc --version
 python3 .ci/registry_publish_test.py
 python3 .ci/test_cqlt_main_lock.py
+python3 .ci/test_bootstrap_identity.py
 python3 .ci/test_hosted_budget.py
 if [[ $ci_mode == test ]]; then
   PYTHONPATH=. python3 .ci/release_publish_test.py

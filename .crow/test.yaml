@@ -25,6 +25,7 @@ steps:
         set -eu
         TMPDIR="$${TMPDIR:-/tmp}"
         export TMPDIR
+        export CI_REPOSITORY_URL="$${CI_REPOSITORY_URL:-https://github.com/corbet-libs/ccid}"
         export MODE=test
         exec python3 - <<'PY_BOOTSTRAP'
         import hashlib, os, pathlib, re, runpy, shutil, signal, subprocess, sys, tarfile, tempfile
