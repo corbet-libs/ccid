@@ -159,8 +159,14 @@ fn entries(root: &Path) -> Result<BTreeMap<PathBuf, String>> {
             for child in fs::read_dir(full)? {
                 walk(root, &path.join(child?.file_name()), out)?;
             }
+        } else if metadata.file_type().is_symlink() {
+            // The link text is the identity; the target is never followed.
+            out.insert(
+                path.to_path_buf(),
+                format!("symlink:{}", fs::read_link(&full)?.display()),
+            );
         } else {
-            out.insert(path.to_path_buf(), cache::source_tree_digest(&full)?);
+            out.insert(path.to_path_buf(), format!("file:{}", digest(&fs::read(&full)?)));
         }
         Ok(())
     }
